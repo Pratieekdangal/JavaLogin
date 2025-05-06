@@ -35,25 +35,56 @@ public class LoginServlet extends HttpServlet {
         String email = request.getParameter("email");
         String password = request.getParameter("password");
 
+        // Input validation
+        if (email == null || email.trim().isEmpty()) {
+            request.setAttribute("error", "Email is required");
+            request.getRequestDispatcher("/login.jsp").forward(request, response);
+            return;
+        }
+
+        if (password == null || password.trim().isEmpty()) {
+            request.setAttribute("error", "Password is required");
+            request.getRequestDispatcher("/login.jsp").forward(request, response);
+            return;
+        }
+
+        // Email format validation
+        if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+            request.setAttribute("error", "Invalid email format");
+            request.getRequestDispatcher("/login.jsp").forward(request, response);
+            return;
+        }
+
         try {
             User user = userDAO.getUserByEmail(email);
-            if (user != null && PasswordHasher.verifyPassword(password, user.getPassword())) {
-                // Login successful
-                HttpSession session = request.getSession();
-                session.setAttribute("user", user);
-                logger.info("User logged in successfully: " + email);
 
-                // Redirect based on user role
-                redirectBasedOnRole(response, user, request.getContextPath());
-            } else {
-                // Login failed
-                logger.warning("Login failed for email: " + email);
-                request.setAttribute("error", "Invalid email or password");
+            if (user == null) {
+                // User not found
+                logger.warning("Login failed: User not found for email: " + email);
+                request.setAttribute("error", "No account found with this email");
                 request.getRequestDispatcher("/login.jsp").forward(request, response);
+                return;
             }
+
+            if (!PasswordHasher.verifyPassword(password, user.getPassword())) {
+                // Invalid password
+                logger.warning("Login failed: Invalid password for email: " + email);
+                request.setAttribute("error", "Invalid password");
+                request.getRequestDispatcher("/login.jsp").forward(request, response);
+                return;
+            }
+
+            // Login successful
+            HttpSession session = request.getSession();
+            session.setAttribute("user", user);
+            logger.info("User logged in successfully: " + email);
+
+            // Redirect based on user role
+            redirectBasedOnRole(response, user, request.getContextPath());
+
         } catch (Exception e) {
             logger.severe("Error during login: " + e.getMessage());
-            request.setAttribute("error", "An error occurred during login");
+            request.setAttribute("error", "An error occurred during login. Please try again.");
             request.getRequestDispatcher("/login.jsp").forward(request, response);
         }
     }

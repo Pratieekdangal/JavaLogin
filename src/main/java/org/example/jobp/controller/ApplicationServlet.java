@@ -23,7 +23,7 @@ import java.util.logging.Logger;
 public class ApplicationServlet extends HttpServlet {
   private static final Logger logger = Logger.getLogger(ApplicationServlet.class.getName());
   private ApplicationDAO applicationDAO;
-  private JobDAO jobDAO;
+  private JobDAO jobDAO;3
 
   @Override
   public void init() throws ServletException {

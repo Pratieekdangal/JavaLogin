@@ -152,7 +152,7 @@ public class JobDAO {
   }
 
   public boolean deleteJob(int jobId, int companyId) {
-    String sql = "UPDATE jobs SET status='deleted' WHERE id=? AND company_id=?";
+    String sql = "DELETE FROM jobs WHERE id=? AND company_id=?";
 
     try (Connection conn = DBUtil.getConnection();
         PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -161,7 +161,13 @@ public class JobDAO {
       stmt.setInt(2, companyId);
 
       int rowsAffected = stmt.executeUpdate();
-      return rowsAffected > 0;
+      if (rowsAffected > 0) {
+        logger.info("Job with ID " + jobId + " has been permanently deleted from the database");
+        return true;
+      } else {
+        logger.warning("No job found with ID " + jobId + " for company ID " + companyId);
+        return false;
+      }
 
     } catch (SQLException e) {
       logger.log(Level.SEVERE, "Error deleting job: " + e.getMessage(), e);
@@ -244,6 +250,21 @@ public class JobDAO {
       }
     }
     return jobs;
+  }
+
+  public Job getJobByIdForEmployer(int jobId) {
+    String sql = "SELECT * FROM jobs WHERE id = ?";
+    try (Connection conn = DBUtil.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(sql)) {
+      stmt.setInt(1, jobId);
+      ResultSet rs = stmt.executeQuery();
+      if (rs.next()) {
+        return mapResultSetToJob(rs);
+      }
+    } catch (SQLException e) {
+      logger.log(Level.SEVERE, "Error getting job by ID for employer: " + e.getMessage(), e);
+    }
+    return null;
   }
 
   private Job mapResultSetToJob(ResultSet rs) throws SQLException {

@@ -159,20 +159,27 @@
         }
     </style>
 </head>
-<body>
-    <nav class="navbar">
-        <div class="nav-container">
-            <a href="${pageContext.request.contextPath}/" class="navbar-brand">JobConnect</a>
-            <div class="nav-links">
-                <a href="${pageContext.request.contextPath}/employer/dashboard">Dashboard</a>
-                <a href="${pageContext.request.contextPath}/employer/post-job">Post Job</a>
-                <a href="${pageContext.request.contextPath}/logout">Logout</a>
+<body style="background: #f4f4f4;">
+    <div class="navbar" style="background: #fff; color: #222; padding: 1rem 2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.07);">
+        <div class="nav-container" style="max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center;">
+            <a href="${pageContext.request.contextPath}/" class="navbar-brand" style="color: #2563eb; text-decoration: none; font-size: 1.5rem; font-weight: bold;">JobConnect</a>
+            <div class="nav-links" style="display: flex; gap: 2rem;">
+                <a href="${pageContext.request.contextPath}/employer/dashboard" style="color: #222; text-decoration: none; transition: color 0.3s ease;${pageContext.request.requestURI.endsWith('/employer/dashboard') ? 'border-bottom:2.5px solid #2563eb;font-weight:700;' : ''}">Dashboard</a>
+                <a href="${pageContext.request.contextPath}/employer/post-job" style="color: #222; text-decoration: none; transition: color 0.3s ease;${pageContext.request.requestURI.endsWith('/employer/post-job') ? 'border-bottom:2.5px solid #2563eb;font-weight:700;' : ''}">Post Job</a>
+                <a href="${pageContext.request.contextPath}/logout" style="color: #222; text-decoration: none; transition: color 0.3s ease;${pageContext.request.requestURI.endsWith('/logout') ? 'border-bottom:2.5px solid #2563eb;font-weight:700;' : ''}">Logout</a>
             </div>
         </div>
-    </nav>
+    </div>
 
     <div class="container">
-        <div class="job-details">
+        <div class="job-details" style="position:relative;">
+            <!-- Delete Button Form -->
+            <c:if test="${user != null && user.role == 'recruiter'}">
+                <form id="deleteJobForm" action="${pageContext.request.contextPath}/employer/jobs/delete" method="post" style="position:absolute;top:20px;right:20px;z-index:10;">
+                    <input type="hidden" name="id" value="${job.id}" />
+                    <button type="submit" class="button button-small button-danger" onclick="return confirm('Are you sure you want to delete this job?');">Delete</button>
+                </form>
+            </c:if>
             <div class="job-header">
                 <h1 class="job-title">${job.title}</h1>
                 <div class="job-meta">
@@ -217,7 +224,9 @@
             </div>
 
             <div class="button-group">
-                <a href="${pageContext.request.contextPath}/edit-job?id=${job.id}" class="button button-primary">Edit Job</a>
+                <c:if test="${user != null && user.role == 'recruiter'}">
+                    <a href="${pageContext.request.contextPath}/employer/jobs/edit?id=${job.id}" class="button button-primary">Edit Job</a>
+                </c:if>
                 <a href="${pageContext.request.contextPath}/employer/dashboard" class="button button-secondary">Back to Dashboard</a>
             </div>
         </div>

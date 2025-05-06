@@ -51,7 +51,13 @@ public class ViewJobServlet extends HttpServlet {
 
     try {
       int jobId = Integer.parseInt(jobIdStr);
-      Job job = jobDAO.getJobById(jobId);
+      Job job;
+      User user = (User) session.getAttribute("user");
+      if (user != null && "recruiter".equals(user.getRole())) {
+        job = jobDAO.getJobByIdForEmployer(jobId);
+      } else {
+        job = jobDAO.getJobById(jobId);
+      }
 
       if (job == null) {
         request.setAttribute("error", "Job not found");

@@ -40,8 +40,11 @@ public class EditJobServlet extends HttpServlet {
   protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
     HttpSession session = request.getSession();
     User user = (User) session.getAttribute("user");
+    LOGGER.info("Session ID: " + session.getId() + ", User in session: " + (user != null)
+        + (user != null ? ", Role: " + user.getRole() : ""));
 
-    if (user == null || !"employer".equals(user.getRole())) {
+    if (user == null || !"recruiter".equals(user.getRole())) {
+      LOGGER.warning("User is not logged in or not a recruiter. Redirecting to login.");
       response.sendRedirect(request.getContextPath() + "/login");
       return;
     }
@@ -50,21 +53,30 @@ public class EditJobServlet extends HttpServlet {
       // Get the company associated with the user
       Company company = companyDAO.getCompanyByUserId(user.getId());
       if (company == null) {
+        LOGGER.warning("No company found for user ID: " + user.getId() + ". Redirecting to dashboard.");
         response.sendRedirect(request.getContextPath() + "/employer/dashboard");
         return;
       }
 
       String jobIdStr = request.getParameter("id");
       if (jobIdStr == null || jobIdStr.trim().isEmpty()) {
+        LOGGER.warning("Job ID parameter is missing or empty. Redirecting to dashboard.");
         response.sendRedirect(request.getContextPath() + "/employer/dashboard");
         return;
       }
 
       try {
         int jobId = Integer.parseInt(jobIdStr);
-        Job job = jobDAO.getJobById(jobId);
+        Job job = jobDAO.getJobByIdForEmployer(jobId);
 
-        if (job == null || job.getCompanyId() != company.getId()) {
+        if (job == null) {
+          LOGGER.warning("No job found with ID: " + jobId + ". Redirecting to dashboard.");
+          response.sendRedirect(request.getContextPath() + "/employer/dashboard");
+          return;
+        }
+        if (job.getCompanyId() != company.getId()) {
+          LOGGER.warning("Job with ID: " + jobId + " does not belong to company ID: " + company.getId()
+              + ". Redirecting to dashboard.");
           response.sendRedirect(request.getContextPath() + "/employer/dashboard");
           return;
         }
@@ -72,7 +84,7 @@ public class EditJobServlet extends HttpServlet {
         request.setAttribute("job", job);
         request.getRequestDispatcher("/WEB-INF/employer/edit-job.jsp").forward(request, response);
       } catch (NumberFormatException e) {
-        LOGGER.log(Level.WARNING, "Invalid job ID format", e);
+        LOGGER.log(Level.WARNING, "Invalid job ID format: " + jobIdStr, e);
         response.sendRedirect(request.getContextPath() + "/employer/dashboard");
       }
     } catch (SQLException e) {
@@ -86,7 +98,7 @@ public class EditJobServlet extends HttpServlet {
     HttpSession session = request.getSession();
     User user = (User) session.getAttribute("user");
 
-    if (user == null || !"employer".equals(user.getRole())) {
+    if (user == null || !"recruiter".equals(user.getRole())) {
       response.sendRedirect(request.getContextPath() + "/login");
       return;
     }
@@ -107,7 +119,7 @@ public class EditJobServlet extends HttpServlet {
 
       try {
         int jobId = Integer.parseInt(jobIdStr);
-        Job existingJob = jobDAO.getJobById(jobId);
+        Job existingJob = jobDAO.getJobByIdForEmployer(jobId);
 
         if (existingJob == null || existingJob.getCompanyId() != company.getId()) {
           response.sendRedirect(request.getContextPath() + "/employer/dashboard");
